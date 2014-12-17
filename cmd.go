@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 
 	"github.com/alexcesaro/log"
 	"github.com/alexcesaro/log/golog"
@@ -22,14 +23,22 @@ var logLevels = []log.Level{
 }
 
 func main() {
+	// Setup cli parser
 	options := Options{}
 	parser := flags.NewParser(&options, flags.Default)
-	p, err := parser.Parse()
+	parser.Usage = "[OPTIONS] hostname[:port]"
+
+	args, err := parser.ParseArgs(os.Args[1:])
 	if err != nil {
-		if p == nil {
-			fmt.Print(err)
-		}
 		return
+	} else if len(args) < 1 {
+		fmt.Println("Invalid usage: Missing hostname.")
+		return
+	}
+
+	host := args[0]
+	if !strings.Contains(host, ":") {
+		host += ":22"
 	}
 
 	// Set verbosity of logger
@@ -45,6 +54,10 @@ func main() {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt)
 
+	logger.Infof("Hammering: %s", host)
+	done := Hammer(host)
+
 	<-sig // Wait for ^C signal
 	logger.Warningf("Interrupt signal detected, shutting down.")
+	close(done)
 }
