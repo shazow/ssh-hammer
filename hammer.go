@@ -1,27 +1,66 @@
 package main
 
 import (
-	"bytes"
+	"io"
 
 	"golang.org/x/crypto/ssh"
 )
 
-func doHammerThings(session *ssh.Session) {
-	defer session.Close()
-	var stdoutBuf bytes.Buffer
-	session.Stdout = &stdoutBuf
-	session.Run("ls")
-
+type SessionIO struct {
+	io.Reader
+	io.Writer
 }
 
-func Hammer(host string) chan struct{} {
+func NewSessionIO(session *ssh.Session) (err error, r io.Reader, w io.Writer) {
+	w, err = session.StdinPipe()
+	if err != nil {
+		return
+	}
+
+	r, err = session.StdoutPipe()
+	if err != nil {
+		return
+	}
+
+	err = session.Shell()
+	if err != nil {
+		return
+	}
+
+	err = session.RequestPty("xterm", 80, 40, ssh.TerminalModes{})
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func doHammerThings(session *ssh.Session) error {
+	defer session.Close()
+
+	err, r, w := NewSessionIO(session)
+	if err != nil {
+		return err
+	}
+
+	actor := NewActor(r, w)
+	go Echo(actor)
+
+	actor.Wait()
+	return nil
+}
+
+func Hammer(host string) (chan struct{}, error) {
 	done := make(chan struct{})
+
+	fail := func(err error) error {
+		close(done)
+		return err
+	}
 
 	key, err := MakeKey()
 	if err != nil {
-		logger.Errorf("Failed to make key: %s", err)
-		close(done)
-		return done
+		return done, fail(err)
 	}
 
 	config := &ssh.ClientConfig{
@@ -31,11 +70,17 @@ func Hammer(host string) chan struct{} {
 		},
 	}
 
-	go func() {
-		conn, _ := ssh.Dial("tcp", host, config)
-		session, _ := conn.NewSession()
-		doHammerThings(session)
-	}()
+	conn, err := ssh.Dial("tcp", host, config)
+	if err != nil {
+		return done, fail(err)
+	}
 
-	return done
+	session, err := conn.NewSession()
+	if err != nil {
+		return done, fail(err)
+	}
+
+	doHammerThings(session)
+
+	return done, nil
 }

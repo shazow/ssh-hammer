@@ -55,7 +55,12 @@ func main() {
 	signal.Notify(sig, os.Interrupt)
 
 	logger.Infof("Hammering: %s", host)
-	done := Hammer(host)
+	done, err := Hammer(host)
+
+	if err != nil {
+		logger.Errorf("Failed to start: %s", err)
+		return
+	}
 
 	<-sig // Wait for ^C signal
 	logger.Warningf("Interrupt signal detected, shutting down.")
