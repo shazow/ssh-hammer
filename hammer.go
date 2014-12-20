@@ -29,9 +29,18 @@ func (h *Hammer) Stop() {
 }
 
 func (h *Hammer) Start() error {
+	key, err := MakeKey()
+	if err != nil {
+		return err
+	}
+
+	auth := []ssh.AuthMethod{
+		ssh.PublicKeys(key),
+	}
+
 	for i := 1; i <= h.num; i++ {
 		name := fmt.Sprintf("hammer%d", i)
-		err := h.connect(name)
+		err := h.connect(name, auth)
 		if err != nil {
 			return err
 		}
@@ -39,19 +48,10 @@ func (h *Hammer) Start() error {
 	return nil
 }
 
-func (h *Hammer) connect(name string) error {
-	// TODO: Re-use keys.
-	logger.Debugf("MakeKey")
-	key, err := MakeKey()
-	if err != nil {
-		return err
-	}
-
+func (h *Hammer) connect(name string, auth []ssh.AuthMethod) error {
 	config := &ssh.ClientConfig{
 		User: name,
-		Auth: []ssh.AuthMethod{
-			ssh.PublicKeys(key),
-		},
+		Auth: auth,
 	}
 
 	conn, err := ssh.Dial("tcp", h.host, config)
@@ -59,7 +59,6 @@ func (h *Hammer) connect(name string) error {
 		return err
 	}
 
-	logger.Debugf("NewSession")
 	session, err := conn.NewSession()
 	if err != nil {
 		return err
@@ -70,13 +69,11 @@ func (h *Hammer) connect(name string) error {
 		session.Close()
 	}()
 
-	logger.Debugf("NewSessionIO")
 	r, w, err := NewSessionIO(session)
 	if err != nil {
 		return err
 	}
 
-	logger.Debugf("NewActor")
 	go func() {
 		Spam(NewActor(r, w))
 	}()

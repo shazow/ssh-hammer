@@ -57,6 +57,7 @@ func main() {
 
 	logger.Infof("Hammering: %s", host)
 	h := NewHammer(host, options.Number)
+
 	err = h.Start()
 	if err != nil {
 		logger.Errorf("Failed to start: %s", err)
@@ -65,5 +66,5 @@ func main() {
 
 	<-sig // Wait for ^C signal
 	logger.Warningf("Interrupt signal detected, shutting down.")
-
+	h.Stop()
 }
