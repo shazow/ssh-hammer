@@ -14,6 +14,7 @@ import (
 // Command-line flag options
 type Options struct {
 	Verbose []bool `short:"v" long:"verbose" description:"Show verbose logging."`
+	Number  int    `long:"num" description:"Number of concurrent hammers."`
 }
 
 var logLevels = []log.Level{
@@ -55,8 +56,8 @@ func main() {
 	signal.Notify(sig, os.Interrupt)
 
 	logger.Infof("Hammering: %s", host)
-	done, err := Hammer(host)
-
+	h := NewHammer(host, options.Number)
+	err = h.Start()
 	if err != nil {
 		logger.Errorf("Failed to start: %s", err)
 		return
@@ -64,5 +65,5 @@ func main() {
 
 	<-sig // Wait for ^C signal
 	logger.Warningf("Interrupt signal detected, shutting down.")
-	close(done)
+
 }

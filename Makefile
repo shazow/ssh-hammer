@@ -19,7 +19,7 @@ clean:
 	rm $(BINARY)
 
 run: $(BINARY)
-	./$(BINARY) -vv $(HOST):$(PORT)
+	./$(BINARY) -vv $(HOST):$(PORT) --num 2
 
 test:
 	go test .

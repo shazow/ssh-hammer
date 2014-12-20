@@ -1,11 +1,14 @@
 package main
 
-import "regexp"
+import (
+	"regexp"
+	"strings"
+)
 
 // Strip any special character.
-var reStrip = regexp.MustCompile("\\0.*m")
+var reStripFormat = regexp.MustCompile("\033\\[[\\d;]+m")
 
-// DeColorString removes all color from the given string
-func Strip(s []byte) []byte {
-	return reStrip.ReplaceAll(s, []byte{})
+// Remove formatting from string
+func StripFormat(s string) string {
+	return strings.TrimSpace(reStripFormat.ReplaceAllString(s, ""))
 }
