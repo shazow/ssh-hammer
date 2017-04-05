@@ -2,4 +2,4 @@
 
 Load testing for SSH servers, written in Go.
 
-**Status**: Not functional yet.
+**Status**: Hammering behaviour is not very configurable, but functional.
