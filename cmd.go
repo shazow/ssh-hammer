@@ -56,8 +56,10 @@ func main() {
 
 	logger.Infof("Hammering: %s", host)
 	done := Hammer(host)
-
-	<-sig // Wait for ^C signal
-	logger.Warningf("Interrupt signal detected, shutting down.")
-	close(done)
+	select {
+	case <-sig: // Wait for ^C signal
+		logger.Warningf("Interrupt signal detected, shutting down.")
+	case <-done:
+		// We're done!
+	}
 }

@@ -32,8 +32,18 @@ func Hammer(host string) chan struct{} {
 	}
 
 	go func() {
-		conn, _ := ssh.Dial("tcp", host, config)
-		session, _ := conn.NewSession()
+		conn, err := ssh.Dial("tcp", host, config)
+		if err != nil {
+			logger.Errorf("Failed to connect: %s", err)
+			close(done)
+			return
+		}
+		session, err := conn.NewSession()
+		if err != nil {
+			logger.Errorf("Failed to create session: %s", err)
+			close(done)
+			return
+		}
 		doHammerThings(session)
 	}()
 
