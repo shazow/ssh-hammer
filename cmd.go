@@ -14,7 +14,7 @@ import (
 // Command-line flag options
 type Options struct {
 	Verbose []bool `short:"v" long:"verbose" description:"Show verbose logging."`
-	Number  int    `long:"num" description:"Number of concurrent hammers."`
+	Number  int    `long:"num" description:"Number of concurrent hammers." default:"1"`
 }
 
 var logLevels = []log.Level{
@@ -31,6 +31,7 @@ func main() {
 
 	args, err := parser.ParseArgs(os.Args[1:])
 	if err != nil {
+		fmt.Println(err)
 		return
 	} else if len(args) < 1 {
 		fmt.Println("Invalid usage: Missing hostname.")

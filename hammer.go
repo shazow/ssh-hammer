@@ -50,8 +50,9 @@ func (h *Hammer) Start() error {
 
 func (h *Hammer) connect(name string, auth []ssh.AuthMethod) error {
 	config := &ssh.ClientConfig{
-		User: name,
-		Auth: auth,
+		User:            name,
+		Auth:            auth,
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
 	conn, err := ssh.Dial("tcp", h.host, config)

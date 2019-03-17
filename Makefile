@@ -4,10 +4,7 @@ PORT = 2022
 
 all: $(BINARY)
 
-**/*.go:
-	go build ./...
-
-$(BINARY): **/*.go *.go
+$(BINARY): *.go
 	go build .
 
 deps:
